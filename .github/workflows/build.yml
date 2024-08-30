@@ -85,7 +85,7 @@ jobs:
         run: |
           source repository/src/config
           NOW="$(date +"%Y-%m-%d")"
-          IMAGE="${NOW}-${DIST_NAME}-${DIST_VERSION}-${{ steps.build.outputs.type }}-${{ steps.build.outputs.sbc }}"
+          IMAGE="${NOW}-${DIST_NAME}-${DIST_VERSION}-${{ steps.download.outputs.type }}-${{ steps.download.outputs.sbc }}"
 
           mv repository/src/workspace/*.img $IMAGE.img
 
@@ -95,7 +95,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: failed-${{ steps.build.outputs.type }}-${{ steps.build.outputs.sbc }}.log
+          name: failed-${{ steps.download.outputs.type }}-${{ steps.download.outputs.sbc }}.log
           path: repository/src/build.log
 
       - name: Compressing Image
