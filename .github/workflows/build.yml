@@ -1,0 +1,123 @@
+name: Build
+
+# 控制工作流何时运行
+on:
+  # 当分支存在 push 或者 pull request请 求时触发任务
+  push:
+    branches:
+      - "1.0.0.smile"
+    paths:
+      - ".github/workflows/Build.yml"
+  # 允许, 从仓库的 Actions 选项卡手动运行当前工作流
+  workflow_dispatch:
+
+jobs:
+ 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: 下载依赖
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes aria2 coreutils jq p7zip-full qemu-user-static zip
+      
+      # Step 2: 下载CustomPiOS仓库代码
+      - name: Checkout CustomPiOS
+        uses: actions/checkout@v4
+        with:
+          repository: 'guysoft/CustomPiOS'
+          ref: 'devel'
+          path: CustomPiOS
+
+      # Step 3: 下载本仓库代码
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: repository
+          submodules: true
+
+      # Step 4: 下载Raspberry pi image
+      - name: Download image
+        id: download
+        uses: ./repository/.github/actions/download
+        with:
+          config: raspberry/rpi32
+
+      # Step 5: 更新CustomPiOS路径
+      - name: Update CustomPiOS Paths
+        run: |
+          cd repository/src
+          ../../CustomPiOS/src/update-custompios-paths
+
+      # Step 6: 开始构建
+      - name: Build Image
+        run: |
+          sudo modprobe loop
+          cd repository/src
+          sudo bash -x ./build_dist
+
+      # Step 7: 清理
+      - name: Cleanup workspace & fix permissions
+        if: success()
+        shell: bash
+        run: |
+          # Clean up workspace
+          path="${{ github.workspace }}/repository/src/workspace"
+          sudo rm -rfv ${path}/aptcache
+          sudo rm -rfv ${path}/mount
+          sudo rm -rfv ${path}/chroot_script
+
+          sudo chown -v -R ${USER}:${USER} ${path}
+          sudo chmod 0775 -v -R ${path}
+
+      - name: Rename image file
+        id: move-image
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          source repository/src/config
+          NOW="$(date +"%Y-%m-%d")"
+          IMAGE="${NOW}-${DIST_NAME}-${DIST_VERSION}-${{ steps.build.outputs.type }}-${{ steps.build.outputs.sbc }}"
+
+          mv repository/src/workspace/*.img $IMAGE.img
+
+          echo "image=${IMAGE}" >> $GITHUB_OUTPUT
+
+      - name: Upload failed Logfile
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-${{ steps.build.outputs.type }}-${{ steps.build.outputs.sbc }}.log
+          path: repository/src/build.log
+
+      - name: Compressing Image
+        shell: bash
+        run: |
+          CPU_COUNT="$(nproc)"
+          echo -e "\e[32mUsing ${CPU_COUNT} Cores for compression...\e[0m"
+          xz -efkvz9T"${CPU_COUNT}" ${{ steps.move-image.outputs.image }}.img || true
+
+      - name: Calculating checksums
+        shell: bash
+        run: |
+          sha256sum ${{ steps.move-image.outputs.image }}.img > ${{ steps.move-image.outputs.image }}.img.sha256
+          sha256sum ${{ steps.move-image.outputs.image }}.img.xz > ${{ steps.move-image.outputs.image }}.img.xz.sha256
+
+      - name: Upload Compressed Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.move-image.outputs.image }}.img.xz
+          path: ${{ steps.move-image.outputs.image }}.img.xz
+
+      - name: Upload Compressed Image Checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.move-image.outputs.image }}.img.xz.sha256
+          path: ${{ steps.move-image.outputs.image }}.img.xz.sha256
+
+      - name: Upload Image Checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.move-image.outputs.image }}.img.sha256
+          path: ${{ steps.move-image.outputs.image }}.img.sha256
