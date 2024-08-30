@@ -7,7 +7,14 @@ on:
     branches:
       - "1.0.0.smile"
     paths:
-      - ".github/workflows/Build.yml"
+      - "src/modules/**"
+      - "src/build_dist"
+      - "config/**"
+      - ".github/workflows/build.yml"
+      - ".github/workflow_config.yml"
+      - ".github/scripts/setup_matrix.py"
+    tags-ignore:
+      - "**"
   # 允许, 从仓库的 Actions 选项卡手动运行当前工作流
   workflow_dispatch:
 
