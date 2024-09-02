@@ -8,11 +8,11 @@ inputs:
   custompios-repository:
     description: "Repository for CustomPiOS"
     required: false
-    default: "guysoft/CustomPiOS"
+    default: "chenjianyao/CustomPiOS"
   custompios-ref:
     description: "Branch / Tag / SHA to checkout CustomPiOS"
     required: false
-    default: "devel"
+    default: "1.0.0.smile"
 outputs:
   type:
     description: SBC type (raspberry/armbian/...)
