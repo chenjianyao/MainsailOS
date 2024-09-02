@@ -49,7 +49,7 @@ jobs:
         id: download
         uses: ./repository/.github/actions/download
         with:
-          config: raspberry/rpi32
+          config: raspberry/armhf
 
       # Step 5: 更新CustomPiOS路径
       - name: Update CustomPiOS Paths

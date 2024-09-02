@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# New locations after bookworm turned into 'oldstable'
+DOWNLOAD_BASE_URL="https://downloads.raspberrypi.com/raspios_lite_armhf/images/raspios_lite_armhf-2024-07-04/2024-07-04-raspios-bookworm-armhf-lite.img.xz"
+DOWNLOAD_URL_CHECKSUM="${DOWNLOAD_BASE_URL}.sha256"
+DOWNLOAD_URL_IMAGE="${DOWNLOAD_BASE_URL}.torrent"
+
+# bookworm版本跳过udev_fix
+MODULES="base(mainsailos(piconfig,klipper,is_req_preinstall,moonraker,timelapse,mainsail,crowsnest,password-for-sudo),postrename)"
+
+export DOWNLOAD_BASE_URL
+export DOWNLOAD_URL_CHECKSUM
+export DOWNLOAD_URL_IMAGE
+export MODULES
+
+### JSON sniplet Setup
+### NOTE: Please see all config files for setup variables!!!
+# shellcheck disable=SC2034
+JSON_SUPPORTED_SBC="pi1-32bit pi2-32bit"
